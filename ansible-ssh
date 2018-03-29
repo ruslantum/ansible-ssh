@@ -25,6 +25,7 @@ def main(argv):
         usage='%prog <host-pattern>',
         runtask_opts=True,
         inventory_opts = True,
+        connect_opts=True,
     )
     options, args = parser.parse_args()
     pattern = args[0]
@@ -33,7 +34,7 @@ def main(argv):
     options.inventory = [inventory_base+options.inventory[0]]
     inventory = InventoryManager(loader,options.inventory)
     variable_manager = VariableManager(loader=loader, inventory=inventory)
-    hosts = inventory.list_hosts(pattern)
+    hosts = inventory.list_hosts(pattern+'*')
 
     # We can't ssh to more than one matching host.
     if len(hosts) != 1:
@@ -56,6 +57,10 @@ def main(argv):
         and host.vars['ansible_ssh_user'] is not None):
         ssh_args += ("-o", "User={0}".format(host.vars['ansible_ssh_user']))
 
+    if options.remote_user:
+        ssh_args += ("-o", "User={0}".format(options.remote_user))
+
+    ssh_args += ("-o", "StrictHostKeyChecking=no")
     ssh_args.append(host.vars['ansible_ssh_host'])
 
     # Launch ssh
